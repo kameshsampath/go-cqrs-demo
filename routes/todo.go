@@ -5,21 +5,14 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/kameshsampath/go-cqrs-demo/commands"
 	"github.com/kameshsampath/go-cqrs-demo/dao"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
+	"github.com/twmb/franz-go/pkg/kgo"
 	"gorm.io/gorm"
 )
 
 var lock sync.Mutex
-var log *zap.SugaredLogger
-
-func init() {
-	// Setup Logger
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	log = logger.Sugar()
-}
 
 func ListAll(c echo.Context) error {
 	lock.Lock()
@@ -48,43 +41,52 @@ func ListByStatus(c echo.Context) error {
 func Create(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
-	t := &dao.Todo{}
-	if err := c.Bind(t); err != nil {
+	// Create InsertTodo command
+	ic := commands.NewInsertCommand()
+	ic.DB = c.Get("DB").(*gorm.DB)
+	ic.Client = c.Get("RP_CLIENT").(*kgo.Client)
+	// Bind the request body
+	if err := c.Bind(ic.Todo); err != nil {
 		return err
 	}
-	db := c.Get("DB").(*gorm.DB)
-	err := t.Save(db)
+	// Save the Todo to DB and Publish the data to Redpanda topic
+	err := ic.SaveAndPublish()
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusCreated, t)
+	return c.JSON(http.StatusCreated, ic.Todo)
 }
 
 func Update(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
-	t := dao.Todo{}
-	err := (&echo.DefaultBinder{}).BindBody(c, &t)
+	// Create UpdateTodo command
+	uc := commands.NewUpdateCommand()
+	uc.DB = c.Get("DB").(*gorm.DB)
+	uc.Client = c.Get("RP_CLIENT").(*kgo.Client)
+	err := (&echo.DefaultBinder{}).BindBody(c, uc.Todo)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Update:%s", t)
-	db := c.Get("DB").(*gorm.DB)
-	err = t.Save(db)
+	// Save the Todo to DB and Publish the data to Redpanda topic
+	err = uc.SaveAndPublish()
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusNoContent, "")
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 func Delete(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
-	t := dao.Todo{}
+	// Create DeleteTodo command
+	dc := commands.NewUpdateCommand()
+	dc.DB = c.Get("DB").(*gorm.DB)
+	dc.Client = c.Get("RP_CLIENT").(*kgo.Client)
 	id, _ := strconv.Atoi(c.Param("id"))
-	t.ID = uint(id)
-	db := c.Get("DB").(*gorm.DB)
-	err := t.Delete(db)
+	dc.Todo.ID = uint(id)
+	// Save the Todo to DB and Publish the data to Redpanda topic
+	err := dc.SaveAndPublish()
 	if err != nil {
 		return err
 	}

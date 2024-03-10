@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/kameshsampath/go-cqrs-demo/config"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-var log *zap.SugaredLogger
+var log = config.Log
 
 func New(dbFile string) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("file:%s", dbFile)
@@ -20,11 +20,6 @@ func New(dbFile string) (*gorm.DB, error) {
 	}
 	//Migrate Schema
 	err = db.AutoMigrate(&Todo{})
-
-	//Setup Logger
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	log = logger.Sugar()
 
 	return db, err
 }

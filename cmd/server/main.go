@@ -8,26 +8,26 @@ import (
 	"path"
 	"time"
 
+	"github.com/kameshsampath/go-cqrs-demo/config"
 	"github.com/kameshsampath/go-cqrs-demo/dao"
 	"github.com/kameshsampath/go-cqrs-demo/routes"
+	"github.com/kameshsampath/go-cqrs-demo/utils"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"go.uber.org/zap"
+	"github.com/labstack/gommon/log"
 )
 
-var log *zap.SugaredLogger
+var cfg *config.Config
 
 func main() {
 
-	//Setup Logger
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	log = logger.Sugar()
+	cfg = config.New()
 
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(setDBToContext)
+	e.Use(setClientToContext)
 
 	//Routes
 	e.GET("/", routes.ListAll)
@@ -58,13 +58,8 @@ func main() {
 func setDBToContext(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Init/Setup DB and add it to the echo context
-		var dbFile string
 		cwd, _ := os.Getwd()
-		if s, ok := os.LookupEnv("DB_FILE"); !ok {
-			dbFile = path.Join(cwd, "data", "todo-test.db")
-		} else {
-			dbFile = s
-		}
+		dbFile := path.Join(cwd, cfg.DBFile)
 		log.Debugf("Using DB %s", dbFile)
 		db, err := dao.New(dbFile)
 		if err != nil {
@@ -74,6 +69,18 @@ func setDBToContext(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
+		return next(c)
+	}
+}
+
+// setClientToContext creates the Redpanda client and set it to the echo context
+func setClientToContext(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		client, err := utils.NewClient(cfg)
+		if err != nil {
+			return err
+		}
+		c.Set("RP_CLIENT", client)
 		return next(c)
 	}
 }

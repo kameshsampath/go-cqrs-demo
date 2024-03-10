@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Todo represents the Todo entity int he Database
 type Todo struct {
 	gorm.Model
 	Title       string `gorm:"column:title;not null" json:"title"`
