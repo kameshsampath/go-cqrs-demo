@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"strconv"
 	"time"
 
@@ -33,7 +32,8 @@ func main() {
 
 	//Routes
 	e.GET("/", routes.ListAll)
-	e.GET("/:status", routes.ListByStatus)
+	e.GET("/status/:status", routes.ListByStatus)
+	e.GET("/category/:category", routes.ListByCategory)
 	e.POST("/", routes.Create)
 	e.PATCH("/:id", routes.Update)
 	e.DELETE("/:id", routes.Delete)
@@ -64,14 +64,16 @@ func main() {
 func setDBToContext(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Init/Setup DB and add it to the echo context
-		cwd, _ := os.Getwd()
-		dbFile := path.Join(cwd, cfg.DBFile)
-		log.Debugf("Using DB %s", dbFile)
-		db, err := dao.New(cfg)
+		db, err := dao.W(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.Set("DB", db)
+		c.Set("W_DB", db)
+		col, err := dao.R(cfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.Set("R_DB", col)
 		return next(c)
 	}
 }

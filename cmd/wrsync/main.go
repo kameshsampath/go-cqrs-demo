@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/kameshsampath/go-cqrs-demo/config"
@@ -22,8 +23,6 @@ type eventData struct {
 	EventType string   `json:"event_type"`
 	Todo      dao.Todo `json:"todo"`
 }
-
-const mongoCollection = "todos"
 
 var (
 	db  *mongo.Client
@@ -62,7 +61,8 @@ poll:
 		default:
 			//Process Records, since it will have a DB insert
 			//putting it into its own goroutine for better concurrency
-			go func(ctx context.Context) {
+			go func() {
+				ctx := context.Background()
 				//Poll records
 				fetches := client.PollFetches(ctx)
 				//log errors
@@ -76,7 +76,7 @@ poll:
 					log.Debugf("Processing partition,%d", p.Partition)
 					p.EachRecord(processRecord)
 				})
-			}(ctx)
+			}()
 		}
 	}
 }
@@ -92,7 +92,8 @@ func processRecord(r *kgo.Record) {
 	}
 	col := db.
 		Database(cfg.AtlasDatabase).
-		Collection(mongoCollection)
+		Collection(dao.MongoCollection)
+
 	switch data.EventType {
 	case "insert", "update":
 		//data that will be updated or inserted
@@ -103,7 +104,7 @@ func processRecord(r *kgo.Record) {
 					{Key: "id", Value: data.Todo.ID},
 					{Key: "title", Value: data.Todo.Title},
 					{Key: "description", Value: data.Todo.Description},
-					{Key: "category", Value: data.Todo.Category},
+					{Key: "category", Value: strings.ToLower(data.Todo.Category)},
 					{Key: "status", Value: data.Todo.Status},
 					{Key: "createdAt", Value: data.Todo.CreatedAt},
 					{Key: "deletedAt", Value: data.Todo.DeletedAt},
@@ -135,7 +136,7 @@ func processRecord(r *kgo.Record) {
 			{Key: "id", Value: data.Todo.ID},
 			{Key: "title", Value: data.Todo.Title},
 		}
-		log.Infof("Delete the record,%s", filter)
+		log.Infof("Delete the record with ID:%d", data.Todo.ID)
 		r, err := col.DeleteOne(ctx, filter)
 		if err != nil {
 			log.Errorf("error deleting %s, %s", filter, err)

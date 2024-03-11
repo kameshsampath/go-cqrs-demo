@@ -139,4 +139,33 @@ EOF
 http -v DELETE :$APP_PORT/1
 ```
 
-**WIP**: Listing of data
+## Read Todo
+
+### List All
+
+```shell
+http -v :$APP_PORT/
+```
+
+### List By Status
+
+Get all `done` tasks,
+
+```shell
+http -v :$APP_PORT/status/done
+```
+
+> **NOTE**: You can use `done`, `ok`, `true` any other text will ne treated as not done.
+> e.g.
+>
+> ```shell
+> http -v :$APP_PORT/status/ko
+> ```
+
+### List By Category
+
+```shell
+http -v :$APP_PORT/category/learning
+```
+
+> **NOTE**: This searches the exact category in case insensitive way
