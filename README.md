@@ -20,6 +20,7 @@ export APP_PORT=8085
 export ATLAS_PORT=27778
 export ATLAS_USER=demo
 export ATLAS_PASSWORD=superS3cret!
+export ATLAS_DATABASE=go-todo-cqrs
 ```
 
 ## Redpanda, Postgres and MongoDB
@@ -105,7 +106,7 @@ The API should be available on port `8085`
 
 ### Add Todo
 
-```json
+```shell
 http -v POST :$APP_PORT <<EOF
 {
     "title": "title 1",
@@ -120,7 +121,7 @@ Refresh the `adminer` window on your browser to see the inserted data.
 
 ### Update Todo
 
-```json
+```shell
 http -v PATCH :$APP_PORT/1 <<EOF
 {
     "ID": 1,
@@ -134,7 +135,7 @@ EOF
 
 ### Delete Todo
 
-```json
+```shell
 http -v DELETE :$APP_PORT/1
 ```
 
