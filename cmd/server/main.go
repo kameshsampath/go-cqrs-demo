@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/kameshsampath/go-cqrs-demo/config"
@@ -40,8 +42,12 @@ func main() {
 	defer stop()
 	// Start server
 	go func() {
-		if err := e.Start(":8080"); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal("shutting down the server")
+		port := 8085
+		if p, ok := os.LookupEnv("APP_PORT"); ok {
+			port, _ = strconv.Atoi(p)
+		}
+		if err := e.Start(fmt.Sprintf(":%d", port)); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server,%s", err)
 		}
 	}()
 
@@ -61,14 +67,11 @@ func setDBToContext(next echo.HandlerFunc) echo.HandlerFunc {
 		cwd, _ := os.Getwd()
 		dbFile := path.Join(cwd, cfg.DBFile)
 		log.Debugf("Using DB %s", dbFile)
-		db, err := dao.New(dbFile)
+		db, err := dao.New(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		c.Set("DB", db)
-		if err != nil {
-			return err
-		}
 		return next(c)
 	}
 }

@@ -2,19 +2,17 @@ package dao
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kameshsampath/go-cqrs-demo/config"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var log = config.Log
 
-func New(dbFile string) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("file:%s", dbFile)
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+func New(cfg *config.Config) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"context"
+
 	"github.com/kameshsampath/go-cqrs-demo/dao"
-	"gorm.io/gorm"
 )
 
 // DeleteTodo handles the event model for deleting a todo
@@ -24,16 +25,18 @@ func NewDeleteCommand() *DeleteTodo {
 func (d *DeleteTodo) SaveAndPublish() error {
 	//run the entire stuff within a transaction
 	//commit if all steps succeed or rollback
-	err := d.DB.Transaction(func(tx *gorm.DB) error {
-		// Delete TODO from the database
-		if err := d.Todo.Delete(tx); err != nil {
-			return err
-		}
-		// send message to Redpanda Topic
-		send(d.Client, d.EventType, d.Todo)
-		return nil
-	})
-	return err
+	tx := d.DB.Begin()
+	// Delete TODO from the database
+	if err := d.Todo.Delete(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	// if the message sending to topic encounters error
+	// rollback the transaction
+	ctx := context.WithValue(context.TODO(), "TRANSACTION", tx)
+	go send(ctx, d.Client, d.EventType, d.Todo)
+
+	return nil
 }
 
 var _ Command = (*DeleteTodo)(nil)

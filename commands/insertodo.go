@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"context"
+
 	"github.com/kameshsampath/go-cqrs-demo/dao"
-	"gorm.io/gorm"
 )
 
 // InsertTodo handles the event model for inserting todo
@@ -20,18 +21,20 @@ func NewInsertCommand() *InsertTodo {
 }
 
 // SaveAndPublish implements Command t
-func (i *InsertTodo) SaveAndPublish() error {
+func (i *InsertTodo) SaveAndPublish() (err error) {
 	//run the entire stuff within a transaction
 	//commit if all steps succeed or rollback
-	err := i.DB.Transaction(func(tx *gorm.DB) error {
-		// Insert TODO into the database
-		if err := i.Todo.Save(tx); err != nil {
-			return err
-		}
-		// send message to Redpanda Topic
-		send(i.Client, i.EventType, i.Todo)
-		return nil
-	})
+	tx := i.DB.Begin()
+	// Insert TODO into the database
+	if err = i.Todo.Save(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+	// if the message sending to topic encounters error
+	// rollback the transaction
+	ctx := context.WithValue(context.TODO(), "TRANSACTION", tx)
+	go send(ctx, i.Client, i.EventType, i.Todo)
+
 	return err
 }
 

@@ -80,7 +80,7 @@ func Delete(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
 	// Create DeleteTodo command
-	dc := commands.NewUpdateCommand()
+	dc := commands.NewDeleteCommand()
 	dc.DB = c.Get("DB").(*gorm.DB)
 	dc.Client = c.Get("RP_CLIENT").(*kgo.Client)
 	id, _ := strconv.Atoi(c.Param("id"))
