@@ -26,6 +26,7 @@ type Config struct {
 	AtlasPort        string   `env:"ATLAS_PORT" envDefault:"27778"`
 	AtlasUser        string   `env:"ATLAS_USER" envDefault:"demo"`
 	AtlasPassword    string   `env:"ATLAS_PASSWORD" envDefault:"superS3cret!"`
+	AtlasDatabase    string   `env:"ATLAS_DATABASE" envDefault:"go-todo-cqrs"`
 }
 
 var Log *zap.SugaredLogger

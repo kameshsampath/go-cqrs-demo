@@ -23,14 +23,19 @@ type eventData struct {
 	Todo      dao.Todo `json:"todo"`
 }
 
-var db *mongo.Client
+const mongoCollection = "todos"
+
+var (
+	db  *mongo.Client
+	cfg *config.Config
+)
 
 func main() {
 	log := config.Log
 	//Setup the Redpand Client
 	//TODO remove after tests
 	groupID := fmt.Sprintf("group-id-%d", time.Now().UnixMilli())
-	cfg := config.New(config.WithConsumerGroupID(groupID))
+	cfg = config.New(config.WithConsumerGroupID(groupID))
 	log.Debugf("Config:%#v", cfg)
 	client, err := utils.NewClient(cfg)
 	if err != nil {
@@ -86,8 +91,8 @@ func processRecord(r *kgo.Record) {
 		log.Debugf("Data:%#v", data)
 	}
 	col := db.
-		Database("todos-crqs-test").
-		Collection("todos")
+		Database(cfg.AtlasDatabase).
+		Collection(mongoCollection)
 	switch data.EventType {
 	case "insert", "update":
 		//data that will be updated or inserted
