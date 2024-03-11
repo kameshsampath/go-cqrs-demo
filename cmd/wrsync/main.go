@@ -29,6 +29,7 @@ var (
 	cfg *config.Config
 )
 
+// TODO #1 Investigate why the daemon is getting Kill signal
 func main() {
 	log := config.Log
 	//Setup the Redpand Client
