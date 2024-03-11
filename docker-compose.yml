@@ -1,0 +1,90 @@
+version: "3.7"
+name: rp-go-cqrs-demo
+networks:
+    redpanda_network:
+        driver: bridge
+    db_network:
+        driver: bridge
+volumes:
+    redpanda-0: null
+    postgresdb: null
+services:
+    db:
+        image: postgres:16.2-alpine3.19
+        restart: always
+        # set shared memory limit when using docker-compose
+        shm_size: 128mb
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRES_DB: todos
+            PGDATA: /var/lib/postgresql/data/pgdata
+            POSTGRES_USER: demo
+            POSTGRES_PASSWORD: "superS3cret!"
+        volumes:
+            - postgresdb:/var/lib/postgresql/data/pgdata
+        networks:
+            - db_network
+    mongo:
+        image: mongodb/atlas
+        privileged: true
+        env_file:
+            - .envrc
+        command: |
+           /bin/bash -c "atlas deployments setup --type local --port $${ATLAS_PORT} --bindIpAll --username $${ATLAS_USER} --password $${ATLAS_PASSWORD} --force && tail -f /dev/null"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - 27778:27778
+        networks:
+            - db_network
+    redpanda-0:
+        command:
+            - redpanda
+            - start
+            - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+            - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+            # Mode dev-container uses well-known configuration properties for development in containers.
+            - --mode dev-container
+            # Tells Seastar (the framework Redpanda uses under the hood) to use 1 core on the system.
+            - --smp 1
+            - --default-log-level=info
+        image: docker.redpanda.com/redpandadata/redpanda:v23.3.6
+        container_name: redpanda-0
+        volumes:
+            - redpanda-0:/var/lib/redpanda/data
+        networks:
+            - redpanda_network
+        ports:
+            - 19092:19092
+            - 19644:9644
+    # Consoles and GUI
+    adminer:
+        image: adminer
+        restart: always
+        depends_on:
+            - db
+        ports:
+            - 9090:8080
+        networks:
+            - db_network
+    console:
+        container_name: redpanda-console
+        image: docker.redpanda.com/redpandadata/console:v2.4.5
+        networks:
+            - redpanda_network
+        entrypoint: /bin/sh
+        command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+        environment:
+            CONFIG_FILEPATH: /tmp/config.yml
+            CONSOLE_CONFIG_FILE: |
+                kafka:
+                  brokers: ["redpanda-0:9092"]
+                redpanda:
+                  adminApi:
+                    enabled: true
+                    urls: ["http://redpanda-0:9644"]
+        ports:
+            - 8080:8080
+        depends_on:
+            - redpanda-0
