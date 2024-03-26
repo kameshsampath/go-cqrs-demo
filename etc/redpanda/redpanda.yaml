@@ -1,0 +1,348 @@
+# https://docs.redpanda.com/current/reference/node-configuration-sample/
+# References
+# https://docs.redpanda.com/current/reference/node-properties/
+# https://docs.redpanda.com/current/reference/topic-properties/
+# https://docs.redpanda.com/current/reference/tunable-properties/
+# https://docs.redpanda.com/current/reference/cluster-properties/
+# organization and cluster_id help Redpanda identify your system.
+# !!!IMPORTANT!!!
+# the internal names has been referred with "redpanda-0" the docker-compose service name, if thats changed update all references in this file.
+organization: "demos"
+cluster_id: "todo-cqrs"
+
+redpanda:
+  # Path where Redpanda keeps the data.
+  # Required.
+  data_directory: "var/lib/redpanda/data"
+
+  developer_mode: true
+
+  # Unique ID identifying the broker in the cluster.
+  # Optional.
+  node_id: 0
+
+  # Controls how a new cluster is formed. This property must have the same value
+  # in all brokers in a cluster.
+  # Optional.
+  empty_seed_starts_cluster: true
+
+  # Enable the Admin API.
+  # Default: true
+  enable_admin_api: true
+
+  # Address and port of admin server.
+  # Default: 127.0.0.1:9644
+  admin:
+    address: "0.0.0.0"
+    port: 9644
+
+  # TLS configuration for the admin server.
+  # Default: null
+  admin_api_tls:
+    # Whether to enable TLS for the admin server.
+    enabled: false
+    # Require client authentication
+    require_client_auth: false
+    # The path to the server certificate PEM file.
+    cert_file: ""
+    # The path to the server key PEM file
+    key_file: ""
+    # The path to the truststore PEM file. Only required if client authentication
+    # is enabled.
+    truststore_file: ""
+
+  # The IP address and port for the internal RPC server.
+  # Default should be a real IP address because this is configuring advertised_rpc_api, not rpc_server.
+  # Default: 127.0.0.1:33145
+  rpc_server:
+    address: redpanda-0
+    port: 33145
+
+  # TLS configuration for the RPC server.
+  # Default: null
+  rpc_server_tls:
+    # Whether to enable TLS for the RPC server.
+    enabled: false
+    # Require client authentication
+    require_client_auth: false
+    # The path to the server certificate PEM file.
+    cert_file: ""
+    # The path to the server key PEM file
+    key_file: ""
+    # The path to the truststore PEM file. Only required if client authentication
+    # is enabled.
+    truststore_file: ""
+
+  # Address of RPC endpoint published to other cluster members.
+  # Default: 0.0.0.0:33145
+  advertised_rpc_api:
+    address: redpanda-0
+    port: 33145
+
+  # Multiple listeners are supported per KIP-103.
+  # The names must match those in advertised_kafka_api
+  kafka_api:
+    - address: "0.0.0.0"
+      name: internal
+      port: 9092
+    - address: "0.0.0.0"
+      name: external
+      port: 19092
+
+  # A list of TLS configurations for the Kafka API listeners.
+  # Default: null
+  kafka_api_tls:
+    # The name of the specific listener to which this config
+    # is applied. The names must match those in kafka_api.
+    - name: "external"
+      # Whether to enable TLS for the Kafka API.
+      enabled: false
+      # Require client authentication
+      require_client_auth: false
+      # The path to the server certificate PEM file.
+      cert_file: ""
+      # The path to the server key PEM file
+      key_file: ""
+      # The path to the truststore PEM file. Only required if client authentication
+      # is enabled.
+      truststore_file: ""
+
+    - name: "internal"
+      enabled: false
+
+  # Multiple listeners are supported per KIP-103.
+  # The names must match those in kafka_api
+  # Default should be a real IP address because this is configuring advertised_rpc_api, not rpc_server.
+  advertised_kafka_api:
+    - address: redpanda-0
+      name: internal
+      port: 9092
+    - address: localhost
+      name: external
+      port: 19092
+
+  # List of the seed server addresses and ports used to join current cluster.
+  # If the seed_server list is empty, the broker is a cluster root and forms a new cluster.
+  # Default: []
+  seed_servers:
+    []
+    # - host:
+    #   address: 192.168.0.1
+    #   port: 33145
+
+# The Redpanda REST API provides a RESTful interface for producing and consuming messages with Redpanda.
+# To disable the REST API, remove this top-level config broker
+pandaproxy:
+  # A list of address and port to listen for Kafka REST API requests.
+  # Default: 0.0.0.0:8082
+  pandaproxy_api:
+    - address: "0.0.0.0"
+      name: internal
+      port: 8082
+    - address: "0.0.0.0"
+      name: external
+      port: 18082
+
+  # A list of TLS configurations for the REST API.
+  # Default: null
+  pandaproxy_api_tls:
+    - name: external
+      # Whether to enable TLS.
+      enabled: false
+      # Require client authentication
+      require_client_auth: false
+      # The path to the server certificate PEM file.
+      cert_file: ""
+      # The path to the server key PEM file
+      key_file: ""
+      # The path to the truststore PEM file. Only required if client
+      # authentication is enabled.
+      truststore_file: ""
+    - name: internal
+      enabled: false
+
+  # A list of address and port for the REST API to publish to client
+  # Default: from pandaproxy_api
+  # Default should be a real IP address because this is configuring advertised_rpc_api, not rpc_server.
+  advertised_pandaproxy_api:
+    - address: redpanda-0
+      name: internal
+      port: 8082
+    - address: localhost
+      name: external
+      port: 18082
+
+  # How long to wait for an idle consumer before removing it.
+  # Default: 60000
+  consumer_instance_timeout_ms: 60000
+
+# The REST API client
+pandaproxy_client:
+  # List of address and port of the brokers
+  # Default: "127.0.0.1:9092
+  brokers:
+    - address: localhost
+      port: 19092
+
+  # TLS configuration for the brokers
+  broker_tls:
+    # Whether to enable TLS.
+    enabled: false
+    # Require client authentication
+    require_client_auth: false
+    # The path to the server certificate PEM file.
+    cert_file: ""
+    # The path to the server key PEM file
+    key_file: ""
+    # The path to the truststore PEM file. Only required if client authentication
+    # is enabled.
+    truststore_file: ""
+
+  # Number of times to retry a request to a broker
+  # Default: 5
+  retries: 5
+
+  # Delay (in milliseconds) for initial retry backoff
+  # Default: 100ms
+  retry_base_backoff_ms: 100
+
+  # Number of records to batch before sending to broker
+  # Default: 1000
+  produce_batch_record_count: 1000
+
+  # Number of bytes to batch before sending to broker
+  # Defautl 1MiB
+  produce_batch_size_bytes: 1048576
+
+  # Delay (in milliseconds) to wait before sending batch
+  # Default: 100ms
+  produce_batch_delay_ms: 100
+
+  # Interval (in milliseconds) for consumer request timeout
+  # Default: 100ms
+  consumer_request_timeout_ms: 100
+
+  # Max bytes to fetch per request
+  # Default: 1MiB
+  consumer_request_max_bytes: 1048576
+
+  # Timeout (in milliseconds) for consumer session
+  # Default: 10s
+  consumer_session_timeout_ms: 10000
+
+  # Timeout (in milliseconds) for consumer rebalance
+  # Default: 2s
+  consumer_rebalance_timeout_ms: 2000
+
+  # Interval (in milliseconds) for consumer heartbeats
+  # Default: 500ms
+  consumer_heartbeat_interval_ms: 500
+
+  # SASL mechanism to use for authentication
+  # Supported: SCRAM-SHA-{256,512}
+  # Default: ""
+  # Support for SASL is disabled when no mechanism is specified.
+  sasl_mechanism: ""
+
+  # Username for SCRAM authentication mechanisms
+  # Default: ""
+  scram_username: ""
+
+  # Password for SCRAM authentication mechanisms
+  # Default: ""
+  scram_password: ""
+
+# The Schema Registry provides a RESTful interface for schema storage, retrieval, and compatibility.
+# To disable the Schema Registry, remove this top-level config broker
+schema_registry:
+  # A list of address and port to listen for Schema Registry API requests.
+  schema_registry_api:
+    - address: "0.0.0.0"
+      name: internal
+      port: 8081
+    - address: "0.0.0.0"
+      name: external
+      port: 18081
+
+  # The replication factor of Schema Registry's internal storage topic
+  schema_registry_replication_factor: 1
+
+  # A list of TLS configurations for the Schema Registry API.
+  # Default: null
+  schema_registry_api_tls:
+    - name: external
+      # Whether to enable TLS.
+      enabled: false
+      # Require client authentication
+      require_client_auth: false
+      # The path to the server certificate PEM file.
+      cert_file: ""
+      # The path to the server key PEM file
+      key_file: ""
+      # The path to the truststore PEM file. Only required if client
+      # authentication is enabled.
+      truststore_file: ""
+    - name: internal
+      enabled: false
+
+# The Schema Registry client config
+# See pandaproxy_client for a list of options
+schema_registry_client:
+
+rpk:
+  # Add optional flags to have rpk start Redpanda with specific parameters.
+  # The available start flags are found in: /src/v/config/configuration.cc
+  additional_start_flags:
+    - "--smp=1"
+    - "--memory=1G"
+    - "--default-log-level=debug"
+
+  # The Kafka API configuration
+  kafka_api:
+    # A list of broker addresses that rpk will use
+    brokers:
+      - redpanda-0:19092
+
+    # The TLS configuration to be used when interacting with the Kafka API.
+    # If present, TLS is enabled. If missing or null, TLS is disabled.
+    tls:
+      # The path to the client certificate (PEM). Only required if client authentication is
+      # enabled in the broker.
+      cert_file: ""
+      # The path to the client certificate key (PEM). Only required if client authentication is
+      # enabled in the broker.
+      key_file: ""
+      # The path to the root CA certificate (PEM).
+      truststore_file: ""
+
+    # The SASL config, if enabled in the brokers.
+    sasl:
+      {}
+      # user: user
+      # password: "pass"
+      # type: SCRAM-SHA-256
+
+  # The Admin API configuration
+  admin_api:
+    # A list of the brokers' Admin API addresses that rpk will use.
+    addresses:
+      - localhost:9644
+    # The TLS configuration to be used when with the Admin API.
+    # If present, TLS is enabled. If missing or null, TLS is disabled.
+    tls:
+      # The path to the client certificate (PEM). Only required if client authentication is
+      # enabled in the broker.
+      cert_file: ""
+      # The path to the client certificate key (PEM). Only required if client authentication is
+      # enabled in the broker.
+      key_file: ""
+      # The path to the root CA certificate (PEM).
+      truststore_file: ""
+
+  # Syncs NTP.
+  # Default: false
+  tune_clocksource: true
+
+  # The directory where all coredumps are saved after they're processed.
+  # Default: ''
+  coredump_dir: "/var/lib/redpanda/coredump"
