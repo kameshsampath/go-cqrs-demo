@@ -1,0 +1,65 @@
+@host = localhost
+@port = {{$dotenv APP_PORT}}
+@appUrl = {{host}}:{{port}}
+
+###
+# Add Todo
+#
+###
+POST http://{{appUrl}}/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "title": "title 1",
+    "description": "title one",
+    "category": "learning",
+    "status": false
+}
+
+###
+# Update Todo
+###
+@todoId = 1
+
+PATCH http://{{appUrl}}/{{todoId}} HTTP/1.1
+Content-Type: application/json
+
+{
+    "ID": 1,
+    "title": "title 1",
+    "description": "title one",
+    "category": "learning",
+    "status": true
+}
+
+###
+# Delete Todo
+###
+@todoId = 1
+
+DELETE http://{{appUrl}}/{{todoId}} HTTP/1.1
+Content-Type: application/json
+
+{
+    "ID": 1,
+    "title": "title 1",
+}
+
+###
+# Get all Todos
+###
+GET http://{{appUrl}}/ HTTP/1.1
+
+###
+# Get Todos by category
+###
+@category = demo
+
+GET http://{{appUrl}}/category/{{category}} HTTP/1.1
+
+###
+# Get Todos by status
+###
+@status = done
+
+GET http://{{appUrl}}/status/{{done}} HTTP/1.1
