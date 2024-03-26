@@ -15,6 +15,7 @@ func NewClient(cfg *config.Config) (*kgo.Client, error) {
 		kgo.DefaultProduceTopic(cfg.DefaultProducerTopic()),
 		kgo.ConsumerGroup(cfg.ConsumerGroupID),
 		kgo.AllowAutoTopicCreation(),
+		kgo.DisableAutoCommit(),
 		//TODO use config value
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
