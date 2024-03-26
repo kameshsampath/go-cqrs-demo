@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/signal"
 	"strings"
-	"time"
 
 	"github.com/kameshsampath/go-cqrs-demo/config"
 	"github.com/kameshsampath/go-cqrs-demo/dao"
@@ -33,8 +31,7 @@ var (
 func main() {
 	log := config.Log
 	//Setup the Redpand Client
-	//TODO remove after tests
-	groupID := fmt.Sprintf("group-id-%d", time.Now().UnixMilli())
+	groupID := os.Getenv("CONSUMER_GROUP_ID")
 	cfg = config.New(config.WithConsumerGroupID(groupID))
 	log.Debugf("Config:%#v", cfg)
 	client, err := utils.NewClient(cfg)
